@@ -1,36 +1,40 @@
 #!/usr/bin/python3
 """
-2-lazy_paginate.py
-Implements lazy pagination using a generator
+1-batch_processing.py
+Batch processing users using generators
 """
 
 seed = __import__('seed')
 
 
-def paginate_users(page_size, offset):
+def stream_users_in_batches(batch_size):
     """
-    Fetches a single page of users
+    Generator yielding users in batches
     """
     connection = seed.connect_to_prodev()
     cursor = connection.cursor(dictionary=True)
-    cursor.execute(
-        f"SELECT * FROM user_data LIMIT {page_size} OFFSET {offset}"
-    )
-    rows = cursor.fetchall()
+    cursor.execute("SELECT * FROM user_data")
+
+    batch = []
+
+    for row in cursor:            # Loop 1
+        batch.append(row)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch
+
     cursor.close()
     connection.close()
-    return rows
 
 
-def lazy_pagination(page_size):
+def batch_processing(batch_size):
     """
-    Generator that lazily loads pages of users
+    Process each batch and print users older than 25
     """
-    offset = 0
-
-    while True:  
-        page = paginate_users(page_size, offset)
-        if not page:
-            break
-        yield page
-        offset += page_size
+    for batch in stream_users_in_batches(batch_size):   # Loop 2
+        for user in batch:                              # Loop 3
+            if user["age"] > 25:
+                print(user)
