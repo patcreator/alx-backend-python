@@ -17,7 +17,7 @@ def stream_users_in_batches(batch_size):
 
     batch = []
 
-    for row in cursor:            # Loop 1
+    for row in cursor:                 # Loop 1
         batch.append(row)
         if len(batch) == batch_size:
             yield batch
@@ -38,3 +38,5 @@ def batch_processing(batch_size):
         for user in batch:                              # Loop 3
             if user["age"] > 25:
                 print(user)
+
+    return   
