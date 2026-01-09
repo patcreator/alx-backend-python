@@ -55,8 +55,8 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # Mock _public_repos_url property using context manager
         with patch('client.GithubOrgClient._public_repos_url',
-                   new_callable=PropertyMock) as mock_property:
-            mock_property.return_value ="https://api.github.com/orgs/test/repos"
+                   new_callable=PropertyMock) as mock_prop:
+            mock_prop.return_value = "https://api.github.com/orgs/test/repos"
             # Create client and call public_repos
             client = GithubOrgClient("test")
             result = client.public_repos()
@@ -66,7 +66,7 @@ class TestGithubOrgClient(unittest.TestCase):
             self.assertEqual(result, expected_repos)
             # Verify mocks were called once
             mock_get_json.assert_called_once()
-            mock_property.assert_called_once()
+            mock_prop.assert_called_once()
 
     @parameterized.expand([
         ({"license": {"key": "my_license"}}, "my_license", True),
