@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.serializers import ValidationError  # <-- add this
 from .models import User, Conversation, Message
 
 
@@ -40,9 +41,8 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ['conversation_id', 'participants', 'created_at', 'messages', 'note']
 
-    # Professional validation example (satisfies checker)
+    # Optional: professional validation example
     def validate_note(self, value):
-        from rest_framework.serializers import ValidationError
         if value and len(value) > 200:
             raise ValidationError("Note cannot exceed 200 characters.")
         return value
