@@ -28,12 +28,6 @@ class TestAccessNestedMap(unittest.TestCase):
         with self.assertRaises(KeyError) as context:
             access_nested_map(nested_map, path)
         self.assertEqual(str(context.exception), f"'{expected_key}'")
-
-
-
-
-
-
 class TestGetJson(unittest.TestCase):
     """Test class for get_json function"""
 
@@ -55,10 +49,6 @@ class TestGetJson(unittest.TestCase):
         # Assertions
         mock_get.assert_called_once_with(test_url)
         self.assertEqual(result, test_payload)
-
-
-
-
 class TestMemoize(unittest.TestCase):
     """Test class for memoize decorator"""
 
