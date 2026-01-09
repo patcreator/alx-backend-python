@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import User, Conversation, Message
@@ -69,3 +69,4 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
