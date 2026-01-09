@@ -17,6 +17,9 @@ class User(AbstractUser):
         editable=False,
         db_index=True
     )
+
+    password = models.CharField(max_length=128)
+
     email = models.EmailField(unique=True, null=False)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     role = models.CharField(
@@ -25,6 +28,17 @@ class User(AbstractUser):
         null=False
     )
     created_at = models.DateTimeField(default=timezone.now)
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='chats_users',
+        blank=True,
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='chats_users_permissions',
+        blank=True,
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -72,3 +86,4 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.email}"
+
