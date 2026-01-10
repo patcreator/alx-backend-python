@@ -19,7 +19,7 @@
                 </div>
             {% endif %}
             <div style="margin-bottom: 10px; padding: 5px; 
-                        background-color: {% if message.sender == request.user %}#e3f2fd{% else %}#f5f5f5{% endif %};">
+                        background-color: '{% if message.sender == request.user %}#e3f2fd{% else %}#f5f5f5{% endif %}';">
                 <strong>{{ message.sender.username }}</strong>
                 {% if message.edited %}<em>(edited)</em>{% endif %}
                 <small>{{ message.timestamp }}</small>

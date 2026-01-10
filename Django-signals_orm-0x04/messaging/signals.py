@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import Message, Notification, MessageHistory
+from messaging import models
 
 
 @receiver(post_save, sender=Message)
