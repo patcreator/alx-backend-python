@@ -1,3 +1,4 @@
+from rest_framework.permissions import IsAuthenticated  
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -16,7 +17,7 @@ import django_filters
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
-    permission_classes = [IsParticipantOfConversation]  # TASK 1: Apply custom permissions
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation] 
     pagination_class = MessagePagination  # TASK 2: Add pagination
 
     def create(self, request, *args, **kwargs):
@@ -32,7 +33,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation = Conversation.objects.create()
         conversation.participants.set(User.objects.filter(user_id__in=participants_ids))
         conversation.save()
-
+        
         serializer = self.get_serializer(conversation)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -59,7 +60,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    permission_classes = [IsParticipantOfConversation]  # TASK 1: Apply custom permissions
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination  # TASK 2: Add pagination (20 messages per page)
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]  # TASK 2: Add filtering
     filterset_class = MessageFilter  # TASK 2: Add filtering

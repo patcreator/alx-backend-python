@@ -21,6 +21,18 @@ class IsParticipantOfConversation(BasePermission):
         return request.user and request.user.is_authenticated
     
     def has_object_permission(self, request, view, obj):
+        # Check for PUT, PATCH, DELETE methods
+        if request.method in ['PUT', 'PATCH', 'DELETE']:
+            # For PUT, PATCH, DELETE - check if user can modify
+            if hasattr(obj, 'sender'):
+                # For messages, only sender can modify
+                return obj.sender == request.user
+            # For conversations, check if user is participant
+            elif hasattr(obj, 'participants'):
+                return obj.participants.filter(id=request.user.id).exists()
+            elif hasattr(obj, 'user1') and hasattr(obj, 'user2'):
+                return obj.user1 == request.user or obj.user2 == request.user
+        
         # For Message objects: check if user is sender or receiver
         if hasattr(obj, 'sender') and hasattr(obj, 'receiver'):
             return obj.sender == request.user or obj.receiver == request.user
