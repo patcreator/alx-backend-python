@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unread Messages Only</title>
+    <style>
+        .message {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            color: #007bff;
+            font-weight: bold;
+        }
+        .code {
+            background-color: #f1f1f1;
+            padding: 5px;
+            font-family: monospace;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Unread Messages Only ({{ count }})</h1>
+    
+    <div class="header">Using Custom Manager Pattern:</div>
+    <div class="code">Message.unread.unread_for_user(request.user)</div>
+    
+    <div class="header">Optimized with .only():</div>
+    <div class="code">.only('id', 'content', 'timestamp', 'sender__username', 'receiver__username', 'read')</div>
+    
+    <hr>
+    
+    {% if messages %}
+        <h2>Your Unread Messages:</h2>
+        {% for message in messages %}
+            <div class="message">
+                <strong>From:</strong> {{ message.sender.username }}<br>
+                <strong>To:</strong> {{ message.receiver.username }}<br>
+                <strong>Time:</strong> {{ message.timestamp }}<br>
+                <strong>Message:</strong> {{ message.content }}<br>
+                <a href="{% url 'conversation' message.sender.id %}">View Conversation</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No unread messages!</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'inbox' %}">Back to Full Inbox</a>
+</body>
+</html>

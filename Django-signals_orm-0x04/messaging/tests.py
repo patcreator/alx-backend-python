@@ -95,3 +95,42 @@ class MessagingTests(TestCase):
         # Check if messages are deleted (CASCADE should handle this)
         messages_from_user1 = Message.objects.filter(sender=self.user1)
         self.assertEqual(messages_from_user1.count(), 0)
+# Add this test in messaging/tests.py
+class CustomManagerTests(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='user1', password='test123')
+        self.user2 = User.objects.create_user(username='user2', password='test123')
+        
+        # Create read and unread messages
+        Message.objects.create(
+            sender=self.user1,
+            receiver=self.user2,
+            content="Unread message 1",
+            read=False
+        )
+        Message.objects.create(
+            sender=self.user1,
+            receiver=self.user2,
+            content="Unread message 2", 
+            read=False
+        )
+        Message.objects.create(
+            sender=self.user1,
+            receiver=self.user2,
+            content="Read message",
+            read=True
+        )
+    
+    def test_unread_for_user_manager(self):
+        """Test that Message.unread.unread_for_user() works correctly"""
+        unread_messages = Message.unread.unread_for_user(self.user2)
+        self.assertEqual(unread_messages.count(), 2)
+        
+        # Test .only() optimization
+        optimized = unread_messages.only('id', 'content', 'sender__username')
+        self.assertEqual(optimized.count(), 2)
+        
+        # Verify the queryset is properly filtered
+        for message in unread_messages:
+            self.assertFalse(message.read)
+            self.assertEqual(message.receiver, self.user2)
