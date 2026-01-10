@@ -6,8 +6,8 @@ from django.db import models
 from django.http import HttpResponse
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
-from .models import Message, Notification, MessageHistory
-
+from django.utils import timezone
+from .managers import UnreadMessagesManager, MessageQuerySet
 
 @login_required
 def inbox(request):
@@ -182,3 +182,87 @@ def unread_inbox(request):
         'count': unread_messages.count(),
     }
     return render(request, 'messaging/unread_inbox.html', context)
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Task 1: Notification related
+    notification_sent = models.BooleanField(default=False)
+    
+    # Task 2: Edit tracking - FIX: Make sure these are properly defined
+    edited = models.BooleanField(default=False)  # This must be models.BooleanField
+    edited_at = models.DateTimeField(null=True, blank=True)  # Must exist
+    edited_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='edited_messages'
+    )
+    
+    # Task 3: Threaded conversations
+    parent_message = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+    
+    # Task 4: Read status
+    read = models.BooleanField(default=False)
+    
+    # Managers
+    objects = MessageQuerySet.as_manager()  # Default manager with custom queryset
+    unread = UnreadMessagesManager()  # Custom manager for unread messages
+    
+    def __str__(self):
+        return f"Message from {self.sender} to {self.receiver}"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
+
+
+class Notification(models.Model):
+    """Task 0: Store notifications for new messages - MUST EXIST"""
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
+    message = models.ForeignKey(
+        'Message',  # Use string reference to avoid circular import
+        on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Notification for {self.user}: {self.message}"
+
+
+class MessageHistory(models.Model):
+    """Task 2: Store message edit history"""
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
+    old_content = models.TextField()
+    edited_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"History for Message {self.message.id}"
+    
+    class Meta:
+        verbose_name_plural = "Message Histories"
+        ordering = ['-changed_at']

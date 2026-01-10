@@ -221,3 +221,21 @@ def test_custom_manager(request):
         'unread_count': unread_count,
         'unread_messages': unread_optimized,
     })
+
+@login_required
+def display_message_history(request, message_id):
+    """Task 1: Display message edit history in UI"""
+    message = get_object_or_404(Message, id=message_id)
+    
+    # Check permissions
+    if message.sender != request.user and message.receiver != request.user:
+        return redirect('inbox')
+    
+    # Get edit history
+    history = MessageHistory.objects.filter(message=message).order_by('-changed_at')
+    
+    context = {
+        'message': message,
+        'history': history,
+    }
+    return render(request, 'messaging/display_history.html', context)
