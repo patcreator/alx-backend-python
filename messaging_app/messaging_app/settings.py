@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
-
+    'django_filters', 
     # Local apps
     'chats',
 ]
@@ -107,6 +107,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
 }
+
 
 # JWT Settings
 SIMPLE_JWT = {
