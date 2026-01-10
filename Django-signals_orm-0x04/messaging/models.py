@@ -55,14 +55,9 @@ class Message(models.Model):
     
     def save(self, *args, **kwargs):
         """Custom save to track who edited the message"""
-        if self.pk:  # If this is an update (not creation)
-            old_message = Message.objects.filter(pk=self.pk).first()
-            if old_message and old_message.content != self.content:
-                # Set edited fields
-                self.edited = True
-                self.edited_at = timezone.now()
+        # Don't do edit tracking here since pre_save signal handles it
+        # This ensures we don't double-log edits
         super().save(*args, **kwargs)
-    
     class Meta:
         ordering = ['-timestamp']
 
