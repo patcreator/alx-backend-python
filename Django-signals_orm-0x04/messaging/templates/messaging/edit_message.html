@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Message</title>
+</head>
+<body>
+    <h1>Edit Message</h1>
+    
+    <p><strong>Original message:</strong> {{ message.content }}</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="content" rows="4" cols="50" required>{{ message.content }}</textarea>
+        <br><br>
+        <button type="submit">Save Changes</button>
+        <a href="{% url 'conversation' message.receiver.id %}">Cancel</a>
+    </form>
+    
+    <p><small>Note: All edits will be logged in the message history.</small></p>
+</body>
+</html>

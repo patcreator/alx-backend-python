@@ -7,7 +7,17 @@
     <h1>Conversation with {{ other_user.username }}</h1>
     
     <div style="border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll;">
+        
         {% for message in messages %}
+            {% if message.sender == request.user %}
+                <div style="font-size: 0.8em; margin-top: 5px;">
+                    <a href="{% url 'edit_message' message.id %}">Edit</a>
+                    {% if message.edited %}
+                        | <a href="{% url 'message_history' message.id %}">View Edit History</a>
+                        <small>(Last edited: {{ message.edited_at|timesince }} ago)</small>
+                    {% endif %}
+                </div>
+            {% endif %}
             <div style="margin-bottom: 10px; padding: 5px; 
                         background-color: {% if message.sender == request.user %}#e3f2fd{% else %}#f5f5f5{% endif %};">
                 <strong>{{ message.sender.username }}</strong>

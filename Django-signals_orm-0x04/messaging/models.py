@@ -23,9 +23,16 @@ class Message(models.Model):
     # Task 1: Notification related
     notification_sent = models.BooleanField(default=False)
     
-    # Task 2: Edit tracking
+    # Task 2: Edit tracking - ADD THESE FIELDS
     edited = models.BooleanField(default=False)
-    last_edited = models.DateTimeField(null=True, blank=True)
+    edited_at = models.DateTimeField(null=True, blank=True)  # ADDED
+    edited_by = models.ForeignKey(  # ADDED
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='edited_messages'
+    )
     
     # Task 3: Threaded conversations
     parent_message = models.ForeignKey(
@@ -46,6 +53,16 @@ class Message(models.Model):
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"
     
+    def save(self, *args, **kwargs):
+        """Custom save to track who edited the message"""
+        if self.pk:  # If this is an update (not creation)
+            old_message = Message.objects.filter(pk=self.pk).first()
+            if old_message and old_message.content != self.content:
+                # Set edited fields
+                self.edited = True
+                self.edited_at = timezone.now()
+        super().save(*args, **kwargs)
+    
     class Meta:
         ordering = ['-timestamp']
 
@@ -65,6 +82,12 @@ class MessageHistory(models.Model):
     """Task 2: Store message edit history"""
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
     old_content = models.TextField()
+    edited_by = models.ForeignKey(  # Track who made the edit
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
     changed_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -72,3 +95,4 @@ class MessageHistory(models.Model):
     
     class Meta:
         verbose_name_plural = "Message Histories"
+        ordering = ['-changed_at']

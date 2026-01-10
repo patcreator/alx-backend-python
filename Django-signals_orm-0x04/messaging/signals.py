@@ -1,51 +1,146 @@
-from django.db.models.signals import post_save, pre_save, post_delete
-from django.dispatch import receiver
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db import models
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 from .models import Message, Notification, MessageHistory
 
 
-@receiver(post_save, sender=Message)
-def create_notification_on_new_message(sender, instance, created, **kwargs):
-    """Task 1: Create notification when a new message is created"""
-    if created and not instance.notification_sent:
-        Notification.objects.create(
-            user=instance.receiver,
-            message=instance
-        )
-        instance.notification_sent = True
-        instance.save(update_fields=['notification_sent'])
-
-
-@receiver(pre_save, sender=Message)
-def log_message_edit(sender, instance, **kwargs):
-    """Task 2: Log message edits before saving"""
-    if instance.pk:  # Only for existing messages
-        try:
-            old_message = Message.objects.get(pk=instance.pk)
-            if old_message.content != instance.content:
-                # Content changed, log to history
-                MessageHistory.objects.create(
-                    message=instance,
-                    old_content=old_message.content
-                )
-                instance.edited = True
-                instance.last_edited = timezone.now()
-        except Message.DoesNotExist:
-            pass
-
-
-@receiver(post_delete, sender=User)
-def cleanup_user_data(sender, instance, **kwargs):
-    """Task 3: Clean up related data when user is deleted"""
-    # Note: Using post_delete because CASCADE deletes will already handle
-    # most relations. This is for any additional cleanup if needed.
+@login_required
+def inbox(request):
+    """Display user's inbox with unread messages"""
+    # Task 4: Use custom manager for unread messages
+    unread_messages = Message.unread_messages.for_user(request.user)
     
-    # Clear any cached data related to the user
-    from django.core.cache import cache
-    cache_keys = [
-        f'user_messages_{instance.id}',
-        f'user_conversations_{instance.id}',
-        f'unread_count_{instance.id}',
-    ]
-    for key in cache_keys:
-        cache.delete(key)
+    # Optimize query with select_related
+    all_messages = Message.objects.filter(
+        receiver=request.user
+    ).select_related('sender').only(
+        'id', 'content', 'timestamp', 'read', 'sender__username', 'edited', 'edited_at'
+    ).order_by('-timestamp')
+    
+    context = {
+        'unread_messages': unread_messages,
+        'all_messages': all_messages,
+    }
+    return render(request, 'messaging/inbox.html', context)
+
+
+@cache_page(60)  # Task 5: Cache view for 60 seconds
+@login_required
+def conversation(request, user_id):
+    """Display conversation between two users"""
+    other_user = get_object_or_404(User, id=user_id)
+    
+    # Get messages between current user and other user
+    messages = Message.objects.filter(
+        models.Q(sender=request.user, receiver=other_user) |
+        models.Q(sender=other_user, receiver=request.user)
+    ).select_related('sender', 'receiver', 'edited_by').prefetch_related('replies').order_by('timestamp')
+    
+    # Mark messages as read when viewed
+    Message.objects.filter(
+        receiver=request.user,
+        sender=other_user,
+        read=False
+    ).update(read=True)
+    
+    context = {
+        'other_user': other_user,
+        'messages': messages,
+    }
+    return render(request, 'messaging/conversation.html', context)
+
+
+@login_required
+def send_message(request, user_id):
+    """Send a new message or reply"""
+    if request.method == 'POST':
+        receiver = get_object_or_404(User, id=user_id)
+        content = request.POST.get('content', '').strip()
+        parent_id = request.POST.get('parent_id')
+        
+        if content:
+            message = Message.objects.create(
+                sender=request.user,
+                receiver=receiver,
+                content=content,
+                parent_message_id=parent_id if parent_id else None
+            )
+            
+            # Clear conversation cache (Task 5)
+            cache_key = f'conversation_{request.user.id}_{user_id}'
+            cache.delete(cache_key)
+            
+        return redirect('conversation', user_id=user_id)
+    return redirect('inbox')
+
+
+@login_required
+def delete_account(request):
+    """Task 3: Delete user account with related data cleanup"""
+    if request.method == 'POST':
+        user = request.user
+        
+        # Logout user before deletion
+        from django.contrib.auth import logout
+        logout(request)
+        
+        # Delete user (this will trigger post_delete signal)
+        user.delete()
+        
+        return redirect('login')
+    
+    return render(request, 'messaging/delete_account.html')
+
+
+@login_required
+def message_history(request, message_id):
+    """Task 2: Display message edit history"""
+    message = get_object_or_404(
+        Message.objects.select_related('edited_by'),
+        id=message_id
+    )
+    
+    # Ensure user has permission to view this message's history
+    if message.sender != request.user and message.receiver != request.user:
+        return redirect('inbox')
+    
+    history = MessageHistory.objects.filter(
+        message=message
+    ).select_related('edited_by').order_by('-changed_at')
+    
+    context = {
+        'message': message,
+        'history': history,
+    }
+    return render(request, 'messaging/message_history.html', context)
+
+
+@login_required
+def edit_message(request, message_id):
+    """Edit an existing message"""
+    message = get_object_or_404(Message, id=message_id)
+    
+    # Ensure user is the sender
+    if message.sender != request.user:
+        return redirect('inbox')
+    
+    if request.method == 'POST':
+        new_content = request.POST.get('content', '').strip()
+        if new_content and new_content != message.content:
+            # The pre_save signal will automatically log the old content
+            message.content = new_content
+            message.save()
+            
+            # Clear cache for this conversation
+            cache_key = f'conversation_{request.user.id}_{message.receiver.id}'
+            cache.delete(cache_key)
+            
+        return redirect('conversation', user_id=message.receiver.id)
+    
+    context = {
+        'message': message,
+    }
+    return render(request, 'messaging/edit_message.html', context)
