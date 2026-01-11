@@ -1,0 +1,60 @@
+# messaging_app/docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: messaging_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: messaging_db
+      MYSQL_USER: messaging_user
+      MYSQL_PASSWORD: messaging_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    networks:
+      - messaging_network
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    build: .
+    container_name: messaging_web
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
+      DB_NAME: messaging_db
+      DB_USER: messaging_user
+      DB_PASSWORD: messaging_password
+      DB_HOST: db
+      DB_PORT: 3306
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    networks:
+      - messaging_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+networks:
+  messaging_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:

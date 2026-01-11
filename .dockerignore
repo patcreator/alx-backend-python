@@ -1,0 +1,22 @@
+# messaging_app/.dockerignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.env
+*.sqlite3
+*.db
+*.log
+Dockerfile
+docker-compose.yml
+README.md
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

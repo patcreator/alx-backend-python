@@ -1,0 +1,18 @@
+# messaging_app/.gitignore
+.env
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+*.sqlite3
+*.db
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

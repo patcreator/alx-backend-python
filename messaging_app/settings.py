@@ -20,10 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-i0sko!xf(0%-tf0r9_@&=sr%m%h(2h&))jj^_+h-2wk082j#tb'
+import os
+from pathlib import Path
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
+# Secret Key
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-i0sko!xf(0%-tf0r9_@&=sr%m%h(2h&))jj^_+h-2wk082j#tb')
+
+# Debug
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -84,6 +89,21 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME', 'messaging_db'),
+        'USER': os.environ.get('DB_USER', 'messaging_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'messaging_password'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
+    }
+}
+
+AUTH_USER_MODEL = 'chats.User'
 
 
 # Password validation
