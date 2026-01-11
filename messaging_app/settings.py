@@ -83,17 +83,13 @@ WSGI_APPLICATION = 'messaging_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 
 # Database
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.sqlite3', for old task
+        # 'NAME': BASE_DIR / 'db.sqlite3', for early task
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME', 'messaging_db'),
         'USER': os.environ.get('DB_USER', 'messaging_user'),
