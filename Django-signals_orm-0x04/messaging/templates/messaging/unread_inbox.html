@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unread Messages</title>
+    <style>
+        .message {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .unread {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Unread Messages ({{ count }})</h1>
+    
+    <p>Using custom ORM manager: <code>Message.unread.unread_for_user(user)</code></p>
+    
+    {% if unread_messages %}
+        {% for message in unread_messages %}
+            <div class="message unread">
+                <strong>From:</strong> {{ message.sender.username }}<br>
+                <strong>Time:</strong> {{ message.timestamp }}<br>
+                <strong>Message:</strong> {{ message.content|truncatechars:100 }}<br>
+                <a href="{% url 'conversation' message.sender.id %}">View Conversation</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No unread messages! 🎉</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'inbox' %}">Back to Full Inbox</a>
+</body>
+</html>

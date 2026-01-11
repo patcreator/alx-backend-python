@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inbox</title>
+</head>
+<body>
+    <h1>Welcome, {{ request.user.username }}</h1>
+    
+    <h2>Unread Messages ({{ unread_messages.count }})</h2>
+    <ul>
+        {% for message in unread_messages|slice:":10" %}
+            <li>
+                <strong>{{ message.sender.username }}</strong>: 
+                {{ message.content|truncatechars:50 }}
+                <a href="{% url 'conversation' message.sender.id %}">View</a>
+            </li>
+        {% empty %}
+            <li>No unread messages</li>
+        {% endfor %}
+    </ul>
+    
+    <h2>All Conversations</h2>
+    <ul>
+        {% for message in all_messages|slice:":20" %}
+            <li>
+                {% if not message.read %}<strong>{% endif %}
+                {{ message.sender.username }}: {{ message.content|truncatechars:50 }}
+                {% if not message.read %}</strong>{% endif %}
+                <a href="{% url 'conversation' message.sender.id %}">Open</a>
+            </li>
+        {% empty %}
+            <li>No messages yet</li>
+        {% endfor %}
+    </ul>
+<h2>Quick Actions</h2>
+<p>
+    <a href="{% url 'unread_inbox' %}">View Only Unread Messages ({{ unread_count }})</a> |
+    <form method="post" action="{% url 'mark_all_read' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Mark All as Read</button>
+    </form>
+</p>
+    <a href="{% url 'delete_user' %}">Delete Account</a> |
+    <a href="{% url 'logout' %}">Logout</a>
+</body>
+</html>

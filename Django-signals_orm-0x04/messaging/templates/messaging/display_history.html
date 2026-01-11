@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Edit History</title>
+</head>
+<body>
+    <h1>Edit History for Message</h1>
+    
+    <h2>Current Version:</h2>
+    <p><strong>Content:</strong> {{ message.content }}</p>
+    {% if message.edited %}
+        <p><em>Last edited: {{ message.edited_at }}</em></p>
+    {% endif %}
+    
+    <h2>Previous Versions:</h2>
+    {% for item in history %}
+        <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+            <p><strong>Version {{ forloop.revcounter }} ({{ item.changed_at }}):</strong></p>
+            <p>{{ item.old_content }}</p>
+        </div>
+    {% empty %}
+        <p>No previous versions.</p>
+    {% endfor %}
+    
+    <a href="{% url 'inbox' %}">Back to Inbox</a>
+</body>
+</html>
