@@ -1,6 +1,5 @@
 # messaging_app/.gitignore
 .env
-*.log
 __pycache__/
 *.pyc
 *.pyo

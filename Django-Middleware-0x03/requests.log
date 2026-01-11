@@ -1,0 +1,41 @@
+# Request Logging Middleware Log
+# Log started at: 2026-01-11 16:09:52.927053
+# Format: Timestamp - User - Path
+==================================================
+2026-01-11 16:10:01 - User: Anonymous - Path: / - Method: GET
+2026-01-11 16:10:01 - Response: 404 - Path: /
+2026-01-11 16:10:08 - User: Anonymous - Path: /admin/ - Method: GET
+2026-01-11 16:10:08 - Response: 302 - Path: /admin/
+2026-01-11 16:10:08 - User: Anonymous - Path: /admin/login/ - Method: GET
+2026-01-11 16:10:09 - Response: 200 - Path: /admin/login/
+2026-01-11 16:10:14 - User: Anonymous - Path: /admin/login/ - Method: GET
+2026-01-11 16:10:14 - Response: 200 - Path: /admin/login/
+2026-01-11 16:10:19 - User: Anonymous - Path: /chats - Method: GET
+2026-01-11 16:10:19 - Response: 404 - Path: /chats
+2026-01-11 16:10:25 - User: Anonymous - Path: /chats - Method: GET
+2026-01-11 16:10:25 - Response: 404 - Path: /chats
+2026-01-11 16:15:21 - User: Anonymous - Path: / - Method: GET
+2026-01-11 16:15:21 - Response: 404 - Path: /
+2026-01-11 16:15:30 - User: Anonymous - Path: /chats - Method: GET
+2026-01-11 16:15:30 - Response: 404 - Path: /chats
+2026-01-11 16:15:34 - User: Anonymous - Path: /admin/ - Method: GET
+2026-01-11 16:15:34 - Response: 302 - Path: /admin/
+2026-01-11 16:15:34 - User: Anonymous - Path: /admin/login/ - Method: GET
+2026-01-11 16:15:35 - Response: 200 - Path: /admin/login/
+2026-01-11 16:15:40 - User: Anonymous - Path: /admin/login/ - Method: POST
+2026-01-11 16:15:42 - Response: 200 - Path: /admin/login/
+2026-01-11 16:18:14 - User: Anonymous - Path: /chats/test/ - Method: GET
+2026-01-11 16:18:14 - Response: 200 - Path: /chats/test/
+2026-01-11 16:18:14 - User: Anonymous - Path: /chats/test/ - Method: GET
+2026-01-11 16:18:14 - Response: 200 - Path: /chats/test/
+2026-01-11 16:18:26 - User: Anonymous - Path: /chats/messages/ - Method: GET
+2026-01-11 16:18:27 - Response: 500 - Path: /chats/messages/
+2026-01-11 16:18:38 - User: Anonymous - Path: /chats/admin-panel/ - Method: GET
+2026-01-11 16:18:38.582763 - UNAUTHORIZED ACCESS - Path: /chats/admin-panel/ - User: Not authenticated
+2026-01-11 16:18:38 - Response: 401 - Path: /chats/admin-panel/
+2026-01-11 16:18:51 - User: Anonymous - Path: /admin/ - Method: GET
+2026-01-11 16:18:51 - Response: 302 - Path: /admin/
+2026-01-11 16:18:51 - User: Anonymous - Path: /admin/login/ - Method: GET
+2026-01-11 16:18:51 - Response: 200 - Path: /admin/login/
+2026-01-11 16:24:25 - User: Anonymous - Path: /chats/test/ - Method: GET
+2026-01-11 16:24:25 - Response: 200 - Path: /chats/test/
