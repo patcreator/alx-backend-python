@@ -7,7 +7,7 @@ services:
     container_name: messaging_db
     restart: always
     environment:
-      MYSQL_DATABASE: messaging_db
+      MYSQL_DB: messaging_db
       MYSQL_USER: messaging_user
       MYSQL_PASSWORD: messaging_password
       MYSQL_ROOT_PASSWORD: root_password
@@ -32,7 +32,7 @@ services:
         condition: service_healthy
     environment:
       DEBUG: "True"
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
+      SECRET_KEY: ${SECRET_KEY:i0sko!xf(0%-tf0r9_@&=sr%m%h(2h&))jj^_+h-2wk082j#tb}
       DB_NAME: messaging_db
       DB_USER: messaging_user
       DB_PASSWORD: messaging_password
@@ -47,8 +47,8 @@ services:
     networks:
       - messaging_network
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+      sh -c "python3 manage.py migrate &&
+             python3 manage.py runserver 0.0.0.0:8000"
 
 networks:
   messaging_network:
