@@ -193,7 +193,7 @@ class OffensiveLanguageMiddleware:
         ]
 
 
-class RolePermissionMiddleware:
+class RolepermissionMiddleware:
     """
     Middleware that checks user's role before allowing access to specific actions.
     Only allows admin or moderator access to admin panel.
