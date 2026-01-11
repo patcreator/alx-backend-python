@@ -13,46 +13,64 @@ from django.core.cache import cache
 import re
 
 
-# Configure logging for request logging
-if not os.path.exists('logs'):
-    os.makedirs('logs')
-
-logging.basicConfig(
-    filename='logs/requests.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
-)
-file_logger = logging.getLogger('file_logger')
-
-
 class RequestLoggingMiddleware:
     """
     Middleware for logging user requests to a file.
     Logs timestamp, user, and request path for each request.
+    Creates and writes to 'requests.log' file.
     """
     
     def __init__(self, get_response):
         """Initialize the middleware."""
         self.get_response = get_response
+        self.log_file_path = 'requests.log'
+        self.setup_log_file()
+    
+    def setup_log_file(self):
+        """Create the requests.log file if it doesn't exist."""
+        # Create the file if it doesn't exist
+        if not os.path.exists(self.log_file_path):
+            with open(self.log_file_path, 'w') as f:
+                f.write("# Request Logging Middleware Log\n")
+                f.write(f"# Log started at: {datetime.now()}\n")
+                f.write("# Format: Timestamp - User - Path\n")
+                f.write("=" * 50 + "\n")
+            print(f"Created log file: {self.log_file_path}")
     
     def __call__(self, request):
-        """Process each request and log it."""
+        """Process each request and log it to requests.log file."""
         # Get user info
         if request.user.is_authenticated:
             user = request.user.username
         else:
             user = 'Anonymous'
         
-        # Log the request
-        log_message = f"{datetime.now()} - User: {user} - Path: {request.path}"
-        file_logger.info(log_message)
+        # Create log entry
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"{timestamp} - User: {user} - Path: {request.path} - Method: {request.method}\n"
         
-        # Write to separate file as required
-        with open('requests.log', 'a') as f:
-            f.write(f"{log_message}\n")
+        # Write to requests.log file
+        try:
+            with open(self.log_file_path, 'a') as f:
+                f.write(log_entry)
+            
+            # Also print to console for debugging
+            print(f"Logged: {log_entry.strip()}")
+        except Exception as e:
+            print(f"Error writing to log file: {e}")
         
         # Process the request
         response = self.get_response(request)
+        
+        # Log response status
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            response_log = f"{timestamp} - Response: {response.status_code} - Path: {request.path}\n"
+            with open(self.log_file_path, 'a') as f:
+                f.write(response_log)
+        except Exception as e:
+            print(f"Error logging response: {e}")
+        
         return response
 
 
@@ -76,6 +94,11 @@ class RestrictAccessByTimeMiddleware:
         if (current_time >= start_time) or (current_time <= end_time):
             # Check if the request is for chat-related paths
             if request.path.startswith('/chats/'):
+                # Log the blocked attempt
+                log_entry = f"{datetime.now()} - Access BLOCKED - Time: {current_time} - Path: {request.path}\n"
+                with open('requests.log', 'a') as f:
+                    f.write(log_entry)
+                
                 return JsonResponse({
                     'error': 'Access restricted between 9 PM and 6 AM'
                 }, status=403)
@@ -96,7 +119,8 @@ class OffensiveLanguageMiddleware:
         self.get_response = get_response
         # List of offensive words to detect (simplified example)
         self.offensive_words = [
-            'badword1', 'badword2', 'offensive', 'inappropriate'
+            'badword', 'offensive', 'inappropriate', 'hate',
+            'spam', 'abuse', 'harass'
         ]
         # Rate limiting storage
         self.ip_message_count = defaultdict(list)
@@ -106,7 +130,7 @@ class OffensiveLanguageMiddleware:
         current_time = datetime.now()
         
         # Rate limiting: Check only for POST requests to messages endpoint
-        if request.method == 'POST' and request.path.endswith('/messages/'):
+        if request.method == 'POST' and '/messages/' in request.path:
             ip_address = self.get_client_ip(request)
             
             # Clean old entries (older than 1 minute)
@@ -114,6 +138,11 @@ class OffensiveLanguageMiddleware:
             
             # Check if user has exceeded rate limit
             if len(self.ip_message_count[ip_address]) >= 5:
+                # Log the rate limit violation
+                log_entry = f"{datetime.now()} - Rate Limit EXCEEDED - IP: {ip_address} - Path: {request.path}\n"
+                with open('requests.log', 'a') as f:
+                    f.write(log_entry)
+                
                 return JsonResponse({
                     'error': 'Rate limit exceeded. Maximum 5 messages per minute.'
                 }, status=429)
@@ -124,16 +153,23 @@ class OffensiveLanguageMiddleware:
             # Check for offensive language in POST data
             try:
                 if request.body:
-                    data = json.loads(request.body)
+                    # Make a copy of the body to read it
+                    body_copy = request.body.decode('utf-8')
+                    data = json.loads(body_copy) if body_copy else {}
                     content = data.get('content', '').lower()
                     
                     # Check for offensive words
                     for word in self.offensive_words:
                         if word in content:
+                            # Log offensive content detection
+                            log_entry = f"{datetime.now()} - Offensive Content DETECTED - IP: {ip_address} - Word: {word}\n"
+                            with open('requests.log', 'a') as f:
+                                f.write(log_entry)
+                            
                             return JsonResponse({
                                 'error': f'Message contains inappropriate content. Please remove offensive language.'
                             }, status=400)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 pass  # Not JSON data, skip offensive language check
         
         response = self.get_response(request)
@@ -145,7 +181,7 @@ class OffensiveLanguageMiddleware:
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]
         else:
-            ip = request.META.get('REMOTE_ADDR')
+            ip = request.META.get('REMOTE_ADDR', 'unknown')
         return ip
     
     def clean_old_entries(self, ip_address, current_time):
@@ -170,8 +206,13 @@ class RolePermissionMiddleware:
     def __call__(self, request):
         """Check user role for admin panel access."""
         # Check if the request is for admin panel
-        if request.path.endswith('/admin-panel/'):
+        if '/admin-panel/' in request.path:
             if not request.user.is_authenticated:
+                # Log unauthorized access attempt
+                log_entry = f"{datetime.now()} - UNAUTHORIZED ACCESS - Path: {request.path} - User: Not authenticated\n"
+                with open('requests.log', 'a') as f:
+                    f.write(log_entry)
+                
                 return JsonResponse({
                     'error': 'Authentication required'
                 }, status=401)
@@ -183,6 +224,11 @@ class RolePermissionMiddleware:
             is_moderator = hasattr(request.user, 'is_moderator') and request.user.is_moderator
             
             if not (is_admin or is_moderator):
+                # Log permission denied
+                log_entry = f"{datetime.now()} - PERMISSION DENIED - Path: {request.path} - User: {request.user.username}\n"
+                with open('requests.log', 'a') as f:
+                    f.write(log_entry)
+                
                 return JsonResponse({
                     'error': 'Admin or moderator access required'
                 }, status=403)
