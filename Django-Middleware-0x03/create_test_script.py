@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
 Script to verify that the requests.log file exists and contains data.
-Run this after starting the Django server and making some requests.
 """
 import os
 import sys
