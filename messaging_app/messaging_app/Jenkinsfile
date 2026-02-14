@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    parameters {
+        booleanParam(name: 'BUILD_DOCKER', defaultValue: false, description: 'Build and push Docker image?')
+    }
+    
     environment {
         DOCKER_IMAGE = 'patcreator/messaging-app:latest'
         DOCKER_USERNAME = 'patcreator'
@@ -19,11 +23,9 @@ pipeline {
             steps {
                 dir('messaging_app') {
                     sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                        pip install pytest pytest-django
+                        pip3 install --upgrade pip
+                        pip3 install -r messaging_app/requirements.txt
+                        pip3 install pytest pytest-django
                     '''
                 }
             }
@@ -33,7 +35,6 @@ pipeline {
             steps {
                 dir('messaging_app') {
                     sh '''
-                        . venv/bin/activate
                         pytest --junitxml=test-reports/results.xml
                     '''
                 }
@@ -46,6 +47,9 @@ pipeline {
         }
         
         stage('Build Docker Image') {
+            when {
+                expression { params.BUILD_DOCKER }
+            }
             steps {
                 dir('messaging_app') {
                     sh '''
@@ -57,6 +61,9 @@ pipeline {
         }
         
         stage('Push to Docker Hub') {
+            when {
+                expression { params.BUILD_DOCKER }
+            }
             steps {
                 withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASS')]) {
                     sh '''
