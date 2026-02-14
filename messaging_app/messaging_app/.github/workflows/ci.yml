@@ -1,0 +1,72 @@
+name: Django Tests & Quality Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: messaging_test
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_pass
+          MYSQL_ROOT_PASSWORD: rootpass
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Dependencies
+      run: |
+        cd messaging_app
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 pytest-cov coverage
+    
+    - name: Lint with flake8
+      run: |
+        cd messaging_app
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Run Tests with Coverage
+      env:
+        DB_NAME: messaging_test
+        DB_USER: test_user
+        DB_PASSWORD: test_pass
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+      run: |
+        cd messaging_app
+        coverage run manage.py test
+        coverage report
+        coverage html
+    
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: messaging_app/htmlcov/
+    
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: messaging_app/test-reports/
