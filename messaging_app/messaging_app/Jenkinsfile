@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE = 'patcreator/messaging-app:latest'
+        DOCKER_USERNAME = 'patcreator'
+    }
+    
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/PATCREATOR/alx-backend-python.git',
+                    credentialsId: 'github-credentials'
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                dir('messaging_app') {
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install pytest pytest-django
+                    '''
+                }
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                dir('messaging_app') {
+                    sh '''
+                        . venv/bin/activate
+                        pytest --junitxml=test-reports/results.xml
+                    '''
+                }
+            }
+            post {
+                always {
+                    junit 'messaging_app/test-reports/*.xml'
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                dir('messaging_app') {
+                    sh '''
+                        docker build -t messaging-app:latest .
+                        docker tag messaging-app:latest $DOCKER_USERNAME/messaging-app:latest
+                    '''
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USERNAME --password-stdin
+                        docker push $DOCKER_USERNAME/messaging-app:latest
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
