@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-messaging-blue
+  labels:
+    app: django-messaging
+    version: blue
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: django-messaging
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: django-messaging
+        version: blue
+    spec:
+      containers:
+      - name: django-app
+        image: your-django-app-image:2.0  # Updated to version 2.0
+        ports:
+        - containerPort: 8000
+        env:
+        - name: VERSION
+          value: "blue-v2"
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: database_url
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ready/
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 3
