@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Get the service IP for testing
+SERVICE_IP=$(kubectl get svc django-messaging-service -o jsonpath='{.spec.clusterIP}')
+SERVICE_URL="http://$SERVICE_IP"
+
+echo "Starting rolling update to version 2.0..."
+
+# Start continuous requests in background to test for downtime
+echo "Starting continuous requests to check for downtime..."
+for i in {1..100}; do
+    curl -s -o /dev/null -w "%{http_code}\n" $SERVICE_URL &
+    sleep 0.1
+done &
+
+# Apply the updated deployment
+echo "Applying updated deployment..."
+kubectl apply -f blue_deployment.yaml
+
+# Monitor rollout status
+echo "Monitoring rollout status..."
+kubectl rollout status deployment/django-messaging-blue --watch
+
+# Verify the update is complete
+echo "Verifying rolling update is complete..."
+kubectl get pods -l version=blue
+
+# Check the new version
+echo "Checking current version..."
+kubectl describe deployment django-messaging-blue | grep Image
+
+# Get rollout history
+echo "Rollout history:"
+kubectl rollout history deployment/django-messaging-blue
+
+echo "Rolling update completed successfully!"
+
+# Make script executable
+chmod +x kubctl-0x03

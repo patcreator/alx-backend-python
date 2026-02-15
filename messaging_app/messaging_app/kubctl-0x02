@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Deploy blue version
+echo "Deploying blue version..."
+kubectl apply -f blue_deployment.yaml
+
+# Wait for blue deployment to be ready
+echo "Waiting for blue deployment to be ready..."
+kubectl rollout status deployment/django-messaging-blue
+
+# Deploy green version
+echo "Deploying green version..."
+kubectl apply -f green_deployment.yaml
+
+# Wait for green deployment to be ready
+echo "Waiting for green deployment to be ready..."
+kubectl rollout status deployment/django-messaging-green
+
+# Check logs for errors
+echo "Checking blue version logs..."
+BLUE_POD=$(kubectl get pods -l version=blue -o jsonpath='{.items[0].metadata.name}')
+kubectl logs $BLUE_POD --tail=50
+
+echo "Checking green version logs..."
+GREEN_POD=$(kubectl get pods -l version=green -o jsonpath='{.items[0].metadata.name}')
+kubectl logs $GREEN_POD --tail=50
+
+# Apply service pointing to blue initially
+echo "Applying service pointing to blue version..."
+kubectl apply -f kubeservice.yaml
+
+echo "Blue-Green deployment complete. Currently serving blue version."
+
+# Make script executable
+chmod +x kubctl-0x02

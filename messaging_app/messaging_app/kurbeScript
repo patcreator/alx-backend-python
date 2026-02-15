@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Start Minikube cluster
+echo "Starting Minikube cluster..."
+minikube start --driver=docker
+
+# Verify cluster is running
+echo "Verifying cluster status..."
+kubectl cluster-info
+
+# Get available pods in all namespaces
+echo "Retrieving available pods..."
+kubectl get pods --all-namespaces
+
+# Make script executable
+chmod +x kurbeScript

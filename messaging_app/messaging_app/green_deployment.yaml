@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-messaging-green
+  labels:
+    app: django-messaging
+    version: green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: django-messaging
+      version: green
+  template:
+    metadata:
+      labels:
+        app: django-messaging
+        version: green
+    spec:
+      containers:
+      - name: django-app
+        image: your-django-app-image:2.0  # Green version (new)
+        ports:
+        - containerPort: 8000
+        env:
+        - name: VERSION
+          value: "green"
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: database_url
